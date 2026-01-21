@@ -1,0 +1,100 @@
+import torch 
+from typing import Iterable
+
+from SSLProject.utils.enviroment_utils import is_notebook
+if is_notebook():
+    from tqdm.notebook import tqdm 
+else:
+    from tqdm import tqdm 
+
+from SSLProject.trainers.loggers import SimpleLogger, SimpleMLFlowLogger
+from SSLProject.methods.base import BaseMethod
+
+
+class SimpleTrainer:
+    def __init__(self, 
+                 method: BaseMethod, 
+                 optimizer: torch.optim.Optimizer, 
+                 num_epoch: int, 
+                 dataloader: Iterable,
+                 sheduler: torch.optim.lr_scheduler.LRScheduler,
+                 update_teacher_after_n_epoch: int=0,
+                 update_teacher_each_n_step: int=1,
+                 project_root_or_url: str="",
+                 projrct_name: str="runs",
+                 run_name: str="ssl_run",
+                 loger: str="simple",
+                 plot: bool=False):
+        
+        self.method = method 
+        self.optimizer = optimizer    
+        self.sheduler = sheduler 
+        self.dataloader = dataloader
+
+        self.num_epoch = num_epoch
+
+        self.start_update = update_teacher_after_n_epoch
+        self.update_each_n_step = update_teacher_each_n_step
+
+        match loger:
+            case "simple":
+                self.logger = SimpleLogger(root=project_root_or_url,
+                                           project_name=projrct_name,
+                                           run_name=run_name,
+                                           plot=plot) 
+            case "mlflow":
+                self.logger = SimpleMLFlowLogger(url=project_root_or_url,
+                                                 project_name=projrct_name,
+                                                 run_name=run_name)
+            
+            case _:
+                raise ValueError(f"Unknow logger {loger}. Supported 'simple' or 'mlflow'")
+
+        self.step_history = {}
+
+
+    def train(self):  
+        step = 0
+
+        try:
+            for epoch in tqdm(range(self.num_epoch), desc="epoch: "):
+                for i, batch in tqdm(enumerate(self.dataloader), desc="batch progress: "):
+                    step += i
+                    self.optimizer.zero_grad()
+
+                    loss_dict = self.method.train_step(batch)
+                    loss = loss_dict["loss"]
+
+                    loss.backward()
+
+                    if epoch >= self.start_update and step % self.update_each_n_step == 0:
+                        self.method.update_teacher_weights()
+                    
+                    self._update_step_history(loss_dict)
+                
+                if self.sheduler:
+                    self.sheduler.step()
+
+                self._do_log(epoch)
+        finally:
+            self.logger.end_experiment()
+
+
+    def _update_step_history(self, d: dict):
+        for k, v in d.items():
+            v = v.item()
+            if k in self.step_history:
+                    self.step_history[k].append(v)
+            else:
+                self.step_history[k] = [v]
+
+
+    def _do_log(self,
+                epoch: int):
+        for k, v in self.step_history:
+            v = sum(v)/len(v)
+            self.step_history[k] = v
+        self.logger.loglog(self.step_history, epoch)
+        self.step_history = {}
+
+
