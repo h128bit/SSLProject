@@ -23,8 +23,7 @@ class SimpleTrainer:
                  project_root_or_url: str="",
                  projrct_name: str="runs",
                  run_name: str="ssl_run",
-                 loger: str="simple",
-                 plot: bool=False):
+                 logger: str="simple"):
         
         self.method = method 
         self.optimizer = optimizer    
@@ -36,19 +35,18 @@ class SimpleTrainer:
         self.start_update = update_teacher_after_n_epoch
         self.update_each_n_step = update_teacher_each_n_step
 
-        match loger:
+        match logger:
             case "simple":
                 self.logger = SimpleLogger(root=project_root_or_url,
                                            project_name=projrct_name,
-                                           run_name=run_name,
-                                           plot=plot) 
+                                           run_name=run_name) 
             case "mlflow":
                 self.logger = SimpleMLFlowLogger(url=project_root_or_url,
                                                  project_name=projrct_name,
                                                  run_name=run_name)
             
             case _:
-                raise ValueError(f"Unknow logger {loger}. Supported 'simple' or 'mlflow'")
+                raise ValueError(f"Unknow logger {logger}. Supported 'simple' or 'mlflow'")
 
         self.step_history = {}
 
@@ -58,8 +56,8 @@ class SimpleTrainer:
 
         try:
             for epoch in tqdm(range(self.num_epoch), desc="epoch: "):
-                for i, batch in tqdm(enumerate(self.dataloader), desc="batch progress: "):
-                    step += i
+                for batch in tqdm(self.dataloader, desc="batch progress: ", total=len(self.dataloader), leave=False):
+                    step += 1
                     self.optimizer.zero_grad()
 
                     loss_dict = self.method.train_step(batch)
@@ -91,7 +89,7 @@ class SimpleTrainer:
 
     def _do_log(self,
                 epoch: int):
-        for k, v in self.step_history:
+        for k, v in self.step_history.items():
             v = sum(v)/len(v)
             self.step_history[k] = v
         self.logger.loglog(self.step_history, epoch)

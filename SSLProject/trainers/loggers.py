@@ -1,7 +1,11 @@
-import os 
 import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
+
+try:
+    import mlflow
+except:
+    pass 
 
 
 class LoggerInterface:
@@ -17,8 +21,7 @@ class SimpleLogger(LoggerInterface):
     def __init__(self,
                  project_name: str,
                  run_name: str,
-                 root: str|Path,
-                 plot: bool=False):
+                 root: str|Path):
         super().__init__()
 
         self.root = Path(root)
@@ -30,15 +33,14 @@ class SimpleLogger(LoggerInterface):
         if not self.path_to_prj.exists():
             self.path_to_prj.mkdir()
 
-        self.path_to_run = self.check_exists_file_or_create_new(self.path_to_prj, run_name)
+        self.path_to_run = self.check_exists_file_or_create_new(self.path_to_prj, self.run_name)
         self.path_to_run.mkdir()
 
         self.plot_folder_path = self.path_to_run/"plots"
         if not self.plot_folder_path.exists():
             self.plot_folder_path.mkdir()
-        self.plot = plot
 
-        self.log_file_path = self.check_exists_file_or_create_new(self.path_to_prj, "losses.csv")
+        self.log_file_path = self.check_exists_file_or_create_new(self.path_to_run, "losses.csv")
         self.first_write = True
 
 
@@ -64,13 +66,13 @@ class SimpleLogger(LoggerInterface):
             file_path = path/file_name
             idx += 1
 
-        return path/file_path
+        return file_path
         
 
     def draw_plot(self) -> None:
         plt.ioff()
 
-        df = pd.DataFrame(self.log_file_path)
+        df = pd.read_csv(self.log_file_path)
         cols = df.columns
 
         fig, axs = plt.subplots(ncols=len(cols), nrows=1, figsize=(20, 5))
@@ -84,9 +86,8 @@ class SimpleLogger(LoggerInterface):
         plt.tight_layout()
         fig.savefig(self.plot_folder_path/"plot.png", bbox_inches='tight', dpi=200)
 
-        if self.plot:
-            plt.show()
-
+        plt.close(fig)
+            
 
     def loglog(self, 
                log: dict[str, float|int],
@@ -106,7 +107,7 @@ class SimpleMLFlowLogger(LoggerInterface):
                  project_name: str,
                  run_name: str,
                  url: str):
-        import mlflow 
+        import mlflow # check what mlflow is install
 
         self.prj_name = project_name
         self.run_name = run_name
@@ -123,7 +124,8 @@ class SimpleMLFlowLogger(LoggerInterface):
         
         if not self.experiment_is_run:
             self.experiment_is_run = True
-            mlflow.start_run(self.run_name)
+            mlflow.start_run(run_name=self.run_name)
+            
         mlflow.log_metrics(log, step=step)
 
 

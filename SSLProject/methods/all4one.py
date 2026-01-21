@@ -29,7 +29,7 @@ class All4One(BaseMomentum):
 
         self.projector_student = build_linear_model(in_feature_dim=self.model_out_feature, out_feature_dim=self.projector_out_size, middle_feat_layers_dim=self.predictor_width)
 
-        self.projector_teacher = torch.optim.swa_utils.AveragedModel(self.projector_student, device=torch.device(self.device), avg_fn=self.ema_avg_func)
+        self.projector_teacher = torch.optim.swa_utils.AveragedModel(self.projector_student, avg_fn=self.ema_avg_func)
         
         self.predictor_knn = build_linear_model(in_feature_dim=self.projector_out_size, out_feature_dim=self.projector_out_size, middle_feat_layers_dim=self.predictor_width)
 

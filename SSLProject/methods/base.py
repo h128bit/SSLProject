@@ -50,7 +50,7 @@ class BaseMomentum(BaseMethod):
 
         # Exponential Moving Average (EMA)
         self.ema_avg_func = lambda avg_model_param, model_param, num_averaged: self.theta * avg_model_param + (1 - self.theta) * model_param
-        self.teacher = torch.optim.swa_utils.AveragedModel(self.student, device=torch.device(self.device), avg_fn=self.ema_avg_func)
+        self.teacher = torch.optim.swa_utils.AveragedModel(self.student, avg_fn=self.ema_avg_func)
 
         
     def update_teacher_weights(self) -> None:
@@ -58,6 +58,10 @@ class BaseMomentum(BaseMethod):
     
 
     def forward(self, x) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        First view for student, second to teacher
+        """
+
         view1 = x[0]
         view2 = x[1]
 
