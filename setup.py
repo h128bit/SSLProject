@@ -20,6 +20,7 @@ setup(
     "torch>=2.0.0",
     "torchvision>=0.15.0",
     "tqdm>=4.60.0",
+    "info-nce-pytorch"
     ],
 
     python_requires=">=3.10",
