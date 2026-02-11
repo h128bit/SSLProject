@@ -55,7 +55,7 @@ class All4One(BaseMomentum):
         self.a3 = eta
 
 
-    def train_step(self, batch) -> dict[str, torch.Tensor]:
+    def train_step(self, batch: tuple[torch.Tensor, torch.Tensor]) -> dict[str, torch.Tensor]:
         view1, view2 = batch
 
         base_loss = None 
