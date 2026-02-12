@@ -51,3 +51,12 @@ class GatherLayer(torch.autograd.Function):
 def gather(X, dim=0):
     """Gathers tensors from all processes, supporting backward propagation."""
     return torch.cat(GatherLayer.apply(X), dim=dim)
+
+
+def cross_entropy(themperature: float=0.1):
+    def _inner(inputs: torch.Tensor, target: torch.Tensor):
+        teacher_probs = torch.nn.functional.softmax(target / themperature, dim=1)
+        student_log_probs = torch.nn.functional.log_softmax(inputs / themperature, dim=1)
+        loss = -(teacher_probs * student_log_probs).sum(dim=1).mean() * (themperature ** 2)
+        return loss
+    return _inner

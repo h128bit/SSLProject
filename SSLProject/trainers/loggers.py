@@ -117,8 +117,6 @@ class SimpleMLFlowLogger(LoggerInterface):
 
         self.experiment_is_run = False
 
-        logging.info("MLFlow logger was created")
-
 
     def loglog(self, 
                log: dict[str, float|int],

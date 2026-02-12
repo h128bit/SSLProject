@@ -2,6 +2,8 @@ from typing import Callable, Tuple
 
 import torch 
 
+from SSLProject.utils.utils import cross_entropy
+
 
 
 class BaseMethod(torch.nn.Module):
@@ -13,12 +15,13 @@ class BaseMethod(torch.nn.Module):
     def __init__(self, 
                  model: torch.nn.Module, 
                  loss_func: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]|None=None, 
-                 device: str|None=None):
+                 device: str|None=None,
+                 T: float=0.1):
         super().__init__()
 
         self.student = model
 
-        self.loss_func = loss_func if loss_func else torch.nn.functional.cross_entropy
+        self.loss_func = loss_func if loss_func else cross_entropy(T)
         
         match device:
             case None:
@@ -43,8 +46,9 @@ class BaseMomentum(BaseMethod):
                  model: torch.nn.Module, 
                  loss_func: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]|None=None, 
                  theta: float=0.98, 
-                 device: str|None=None):
-        super().__init__(model, loss_func, device)
+                 device: str|None=None,
+                 T: float=0.1):
+        super().__init__(model, loss_func, device, T)
 
         self.theta = theta
 
@@ -73,6 +77,7 @@ class BaseMomentum(BaseMethod):
 
     def train_step(self, batch) -> dict[str, torch.Tensor]:
         out = self.forward(batch)
+
 
         loss = self.loss_func(*out)
 

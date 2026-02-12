@@ -9,6 +9,7 @@ if is_notebook():
 else:
     from tqdm import tqdm 
 
+from SSLProject.utils.enviroment_utils import get_logger
 from SSLProject.trainers.loggers import SimpleLogger, SimpleMLFlowLogger
 from SSLProject.methods.base import BaseMethod
 
@@ -27,6 +28,8 @@ class SimpleTrainer:
                  run_name: str="ssl_run",
                  logger: str="simple"):
         
+        self.logger = get_logger("SimpleTrainer")
+
         self.method = method 
         self.optimizer = optimizer    
         self.sheduler = sheduler 
@@ -37,16 +40,17 @@ class SimpleTrainer:
         self.start_update = update_teacher_after_n_epoch
         self.update_each_n_step = update_teacher_each_n_step
 
-        logging.info("Create logger...")
         match logger:
             case "simple":
-                self.logger = SimpleLogger(root=project_root_or_url,
+                self.process_logger = SimpleLogger(root=project_root_or_url,
                                            project_name=projrct_name,
                                            run_name=run_name) 
+                self.logger.info("SimpleLogger was created")
             case "mlflow":
-                self.logger = SimpleMLFlowLogger(url=project_root_or_url,
+                self.process_logger = SimpleMLFlowLogger(url=project_root_or_url,
                                                  project_name=projrct_name,
                                                  run_name=run_name)
+                self.logger.info("SimpleMLFlowLogger was created")
             
             case _:
                 raise ValueError(f"Unknow logger {logger}. Supported 'simple' or 'mlflow'")
@@ -55,7 +59,7 @@ class SimpleTrainer:
 
 
     def train(self): 
-        logging.info("=== Start training ===") 
+        self.logger.info("=== Start training ===") 
         step = 0
 
         try:
@@ -79,7 +83,7 @@ class SimpleTrainer:
 
                 self._do_log(epoch)
         finally:
-            self.logger.end_experiment()
+            self.process_logger.end_experiment()
 
 
     def _update_step_history(self, d: dict):
@@ -96,7 +100,7 @@ class SimpleTrainer:
         for k, v in self.step_history.items():
             v = sum(v)/len(v)
             self.step_history[k] = v
-        self.logger.loglog(self.step_history, epoch)
+        self.process_logger.loglog(self.step_history, epoch)
         self.step_history = {}
 
 

@@ -16,12 +16,14 @@ class All4One(BaseMomentum):
                  device: str|None=None,
                  projector_out_size: int=256, 
                  buffer:SupportBuffer|None=None, 
-                 temperature: float=0.1, 
+                 temperature: float=0.1,
+                 alpha: float=1, 
                  sigma: float=0.5,
                  kappa: float=0.5,
                  eta: float=5.0,
+                 T: float=0.1,
                  symmetric: bool=True):
-        super().__init__(model, loss_func, theta, device)
+        super().__init__(model, loss_func, theta, device, T)
 
         self.projector_out_size = projector_out_size
         self.predictor_width = 4096 
@@ -50,6 +52,7 @@ class All4One(BaseMomentum):
         self.infonce_loss = InfoNCE(temperature=temperature)
         self.pos_encoder = PositionalEncoding(d_model=self.projector_out_size)
 
+        self.alpha = alpha
         self.a1 = sigma
         self.a2 = kappa
         self.a3 = eta
@@ -109,7 +112,7 @@ class All4One(BaseMomentum):
                 self.buffer.put(prj_t)
                 update_buffer = True 
 
-        final_loss = base_loss + (self.a1 * nnclr_loss + self.a2 * centroid_loss + self.a3 * red_loss) * sym_coef
+        final_loss = self.alpha * base_loss + (self.a1 * nnclr_loss + self.a2 * centroid_loss + self.a3 * red_loss) * sym_coef
 
         return {
             "base_loss": base_loss,
