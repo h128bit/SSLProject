@@ -1,5 +1,7 @@
 import torch 
 from typing import Iterable
+import logging
+
 
 from SSLProject.utils.enviroment_utils import is_notebook
 if is_notebook():
@@ -35,6 +37,7 @@ class SimpleTrainer:
         self.start_update = update_teacher_after_n_epoch
         self.update_each_n_step = update_teacher_each_n_step
 
+        logging.info("Create logger...")
         match logger:
             case "simple":
                 self.logger = SimpleLogger(root=project_root_or_url,
@@ -51,7 +54,8 @@ class SimpleTrainer:
         self.step_history = {}
 
 
-    def train(self):  
+    def train(self): 
+        logging.info("=== Start training ===") 
         step = 0
 
         try:
