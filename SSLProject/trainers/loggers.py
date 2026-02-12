@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
+import logging
 
 try:
     import mlflow
@@ -97,8 +98,7 @@ class SimpleLogger(LoggerInterface):
 
 
     def end_experiment(self) -> None:
-        self.path_to_run = self.check_exists_file_or_create_new(self.path_to_prj, self.run_name)
-        self.path_to_run.mkdir() 
+        pass
 
 
 
@@ -125,9 +125,18 @@ class SimpleMLFlowLogger(LoggerInterface):
         if not self.experiment_is_run:
             self.experiment_is_run = True
             mlflow.start_run(run_name=self.run_name)
+            try:
+                mlflow.system_metrics.log_system_metrics(
+                    run_id=mlflow.active_run().info.run_id,
+                    sampling_interval=2,  # секунды
+                    max_samples=100
+                    )
+            except:
+                logging.info("System metrics not available")
             
         mlflow.log_metrics(log, step=step)
 
 
     def end_experiment(self) -> None:
-        mlflow.end_run()
+        if mlflow.active_run():
+            mlflow.end_run()
