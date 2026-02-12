@@ -129,7 +129,7 @@ class SimpleMLFlowLogger(LoggerInterface):
                 mlflow.system_metrics.log_system_metrics(
                     run_id=mlflow.active_run().info.run_id,
                     sampling_interval=2,  # секунды
-                    max_samples=100
+                    max_samples=10_000_000
                     )
             except:
                 logging.info("System metrics not available")
