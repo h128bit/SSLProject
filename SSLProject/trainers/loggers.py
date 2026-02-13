@@ -2,6 +2,8 @@ import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
 
+import torch
+
 try:
     import mlflow
     from mlflow.system_metrics import enable_system_metrics_logging
@@ -12,6 +14,9 @@ except:
 
 class LoggerInterface:
     def loglog(self, log: dict[str, float|int], step:int):
+        raise NotImplementedError
+    
+    def save_model_state_dict(self, model: torch.nn.Module, model_name: str, step:int):
         raise NotImplementedError
     
     def start_experiment(self):
@@ -44,6 +49,10 @@ class SimpleLogger(LoggerInterface):
         self.plot_folder_path = self.path_to_run/"plots"
         if not self.plot_folder_path.exists():
             self.plot_folder_path.mkdir()
+
+        self.path_to_save_model = self.path_to_run / "artifacts"
+        if not self.path_to_save_model.exists():
+            self.path_to_save_model.mkdir()
 
         self.log_file_path = self.check_exists_file_or_create_new(self.path_to_run, "losses.csv")
         self.first_write = True
@@ -101,6 +110,11 @@ class SimpleLogger(LoggerInterface):
         self.draw_plot()
 
 
+    def save_model_state_dict(self, model: torch.nn.Module, model_name: str, step:int):
+        path = self.path_to_save_model / f"{model_name}.pt"
+        torch.save(model.state_dict(), path)
+
+
     def end_experiment(self) -> None:
         pass
 
@@ -128,6 +142,14 @@ class SimpleMLFlowLogger(LoggerInterface):
                step: int) -> None: 
             
         mlflow.log_metrics(log, step=step)
+
+
+    def save_model_state_dict(self, model: torch.nn.Module, model_name: str, step:int):
+        mlflow.pytorch.log_model(
+            pytorch_model=model,
+            name=model_name,
+            step=step
+        )
 
 
     def start_experiment(self):

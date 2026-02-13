@@ -23,6 +23,8 @@ class SimpleTrainer:
                  sheduler: torch.optim.lr_scheduler.LRScheduler,
                  update_teacher_after_n_epoch: int=0,
                  update_teacher_each_n_step: int=1,
+                 save_model: bool=True,
+                 save_model_each_n_epochs: int=1,
                  project_root_or_url: str="",
                  projrct_name: str="runs",
                  run_name: str="ssl_run",
@@ -39,6 +41,9 @@ class SimpleTrainer:
 
         self.start_update = update_teacher_after_n_epoch
         self.update_each_n_step = update_teacher_each_n_step
+
+        self.save_model = save_model
+        self.save_model_each_n_epochs = save_model_each_n_epochs
 
         match logger:
             case "simple":
@@ -62,10 +67,11 @@ class SimpleTrainer:
         self.process_logger.start_experiment()
         self.logger.info("=== Start training ===") 
         step = 0
+        batch_size = len(self.dataloader)
 
         try:
             for epoch in tqdm(range(self.num_epoch), desc="epoch: "):
-                for batch in tqdm(self.dataloader, desc="batch progress: ", total=len(self.dataloader), leave=False):
+                for batch in tqdm(self.dataloader, desc="batch progress: ", total=batch_size, leave=False):
                     step += 1
                     self.optimizer.zero_grad()
 
@@ -83,6 +89,10 @@ class SimpleTrainer:
                     self.sheduler.step()
 
                 self._do_log(epoch)
+
+                if self.save_model and step % self.save_model_each_n_epochs == 0:
+                    self.process_logger.save_model_state_dict(self.method.student, "student_model", step//batch_size)
+                    self.process_logger.save_model_state_dict(self.method.teacher.module, "teacher_model", step//batch_size)
         finally:
             self.process_logger.end_experiment()
 
