@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="sslproject",                  
-    version="1.0.4",                          
+    version="1.0.5",                          
     author="h128bit",
     description="Flex Implementation of self supervised learning methods ",
     url="https://github.com/h128bit/SSLProject",
