@@ -24,7 +24,7 @@ def get_logger(name: str):
 
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
-        '%(asctime)s | %(levelname)-s | %(message)s',
+        '%(asctime)s | %(name)s | %(levelname)-s | %(message)s',
         datefmt='%H:%M:%S'
     )
     handler.setFormatter(formatter)

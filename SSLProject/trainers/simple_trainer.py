@@ -59,6 +59,7 @@ class SimpleTrainer:
 
 
     def train(self): 
+        self.process_logger.start_experiment()
         self.logger.info("=== Start training ===") 
         step = 0
 

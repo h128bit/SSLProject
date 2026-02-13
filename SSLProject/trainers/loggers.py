@@ -1,10 +1,11 @@
 import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
-import logging
 
 try:
     import mlflow
+    from mlflow.system_metrics import enable_system_metrics_logging
+    enable_system_metrics_logging()
 except:
     pass 
 
@@ -13,6 +14,9 @@ class LoggerInterface:
     def loglog(self, log: dict[str, float|int], step:int):
         raise NotImplementedError
     
+    def start_experiment(self):
+        raise NotImplementedError
+
     def end_experiment(self):
         raise NotImplementedError
 
@@ -100,6 +104,9 @@ class SimpleLogger(LoggerInterface):
     def end_experiment(self) -> None:
         pass
 
+    
+    def start_experiment(self):
+        pass
 
 
 class SimpleMLFlowLogger(LoggerInterface):
@@ -115,26 +122,28 @@ class SimpleMLFlowLogger(LoggerInterface):
         mlflow.set_tracking_uri(url)
         mlflow.set_experiment(self.prj_name)
 
-        self.experiment_is_run = False
-
 
     def loglog(self, 
                log: dict[str, float|int],
                step: int) -> None: 
-        
-        if not self.experiment_is_run:
-            self.experiment_is_run = True
-            mlflow.start_run(run_name=self.run_name)
-            try:
-                mlflow.system_metrics.log_system_metrics(
-                    run_id=mlflow.active_run().info.run_id,
-                    sampling_interval=2,  # секунды
-                    max_samples=10_000_000
-                    )
-            except:
-                logging.info("System metrics not available")
             
         mlflow.log_metrics(log, step=step)
+
+
+    def start_experiment(self):
+        runs = mlflow.search_runs(
+            experiment_names=[self.prj_name],
+            max_results=1000            
+            )
+        runs = runs["tags.mlflow.runName"].to_list()
+         
+        idx = 1
+        tmp_name = self.run_name
+        while tmp_name in runs:
+            tmp_name = f"{self.run_name}_{idx}"
+            idx += 1
+        self.run_name = tmp_name
+        mlflow.start_run(run_name=self.run_name)
 
 
     def end_experiment(self) -> None:
