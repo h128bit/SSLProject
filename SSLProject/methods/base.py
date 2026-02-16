@@ -32,7 +32,7 @@ class BaseMethod(torch.nn.Module):
         self.model_out_feature = self.student.out_features
 
 
-    def forward(self, x) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x) -> dict[str, torch.Tensor]:
         raise NotImplementedError("Not implemented `forward` method in subclass BaseMethod!")
     
     def train_step(self, batch) -> dict[str, torch.Tensor]:
@@ -61,28 +61,21 @@ class BaseMomentum(BaseMethod):
         self.teacher.update_parameters(self.student)
     
 
-    def forward(self, x) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        First view for student, second to teacher
-        """
+    def forward(self, x) -> dict[str, torch.Tensor]:
+        return self.train_step(x)
+    
 
-        view1 = x[0]
-        view2 = x[1]
+    def train_step(self, batch) -> dict[str, torch.Tensor]:
+        view1 = batch[0]
+        view2 = batch[1]
 
         st_out = self.student(view1)
         teach_out = self.teacher(view2)
 
-        return st_out, teach_out
-    
-
-    def train_step(self, batch) -> dict[str, torch.Tensor]:
-        out = self.forward(batch)
-
-
-        loss = self.loss_func(*out)
+        loss = self.loss_func(st_out, teach_out)
 
         return {
-            "z_student": out[0],
-            "z_teacher": out[1],
+            "z_student": st_out,
+            "z_teacher": teach_out,
             "loss": loss
         }

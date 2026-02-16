@@ -122,6 +122,13 @@ class All4One(BaseMomentum):
             "loss": final_loss
         }
     
+    def forward(self, x) -> dict:
+        return self.train_step(x)
+    
+
+    def __call__(self, x):
+        return self.train_step(x)
+
 
     def update_teacher_weights(self) -> None:
         super().update_teacher_weights()

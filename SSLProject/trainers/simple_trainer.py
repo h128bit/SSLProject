@@ -33,6 +33,7 @@ class SimpleTrainer:
         self.logger = get_logger("SimpleTrainer")
 
         self.method = method 
+
         self.optimizer = optimizer    
         self.sheduler = sheduler 
         self.dataloader = dataloader
@@ -75,7 +76,7 @@ class SimpleTrainer:
                     step += 1
                     self.optimizer.zero_grad()
 
-                    loss_dict = self.method.train_step(batch)
+                    loss_dict = self.method(batch)
                     loss = loss_dict["loss"]
 
                     loss.backward()
