@@ -157,7 +157,11 @@ class SimpleMLFlowLogger(LoggerInterface):
             experiment_names=[self.prj_name],
             max_results=1000            
             )
-        runs = runs["tags.mlflow.runName"].to_list()
+        
+        try:
+            runs = runs["tags.mlflow.runName"].to_list()
+        except KeyError:
+            runs = []
          
         idx = 1
         tmp_name = self.run_name

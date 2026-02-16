@@ -26,7 +26,7 @@ class SimpleTrainer:
                  save_model: bool=True,
                  save_model_each_n_epochs: int=1,
                  project_root_or_url: str="",
-                 projrct_name: str="runs",
+                 project_name: str="runs",
                  run_name: str="ssl_run",
                  logger: str="simple"):
         
@@ -49,12 +49,12 @@ class SimpleTrainer:
         match logger:
             case "simple":
                 self.process_logger = SimpleLogger(root=project_root_or_url,
-                                           project_name=projrct_name,
+                                           project_name=project_name,
                                            run_name=run_name) 
                 self.logger.info("SimpleLogger was created")
             case "mlflow":
                 self.process_logger = SimpleMLFlowLogger(url=project_root_or_url,
-                                                 project_name=projrct_name,
+                                                 project_name=project_name,
                                                  run_name=run_name)
                 self.logger.info("SimpleMLFlowLogger was created")
             
