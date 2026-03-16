@@ -47,7 +47,7 @@ class SimpleTrainer:
         if use_fsdp:
             self.model_copy = copy.deepcopy(method.student).cpu()
             self.method = wrap_model_at_fsdp(method, **kwargs) 
-            self.method.to(f"cuda:0")
+            # self.method.to(f"cuda:0")
             self.save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
             self.is_main_rank = self.use_fsdp and dist.get_rank() == 0
             if torch.cuda.is_available():
