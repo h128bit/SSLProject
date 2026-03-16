@@ -1,6 +1,7 @@
 from torch import nn
 
 
+
 def linear_block(in_feat, out_feat) -> nn.Sequential:
     return nn.Sequential(
         nn.Linear(in_feat, out_feat),
@@ -27,4 +28,20 @@ def build_linear_model(in_feature_dim: int,
 
     return model
 
-    
+
+
+class TeachingModelWrapper(nn.Module):
+    def __init__(self, model, projectors: list[tuple[str, nn.Module]]|None = None) -> None:
+        super().__init__()
+
+
+        self.model = model 
+        self.out_features = model.out_features
+
+        if projectors:
+            for name, module in projectors:
+                setattr(self, name, module)
+
+    def forward(self, x) -> dict:
+        model_out = self.model(x)
+        return model_out

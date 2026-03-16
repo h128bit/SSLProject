@@ -5,6 +5,7 @@ from info_nce import InfoNCE
 
 from SSLProject.methods.base import BaseMomentum
 from SSLProject.utils import PositionalEncoding, SupportBufferKNN, SupportBuffer, off_diagonal, build_linear_model
+from SSLProject.utils.submodel_builder import TeachingModelWrapper
 
 
 
@@ -15,37 +16,37 @@ class All4One(BaseMomentum):
                  theta: float=0.98, 
                  device: str|None=None,
                  projector_out_size: int=256, 
-                 buffer:SupportBuffer|None=None, 
+                 predictor_width: int|list[int]=4096,
+                 buffer: SupportBuffer|None=None, 
                  temperature: float=0.1,
                  alpha: float=1, 
                  sigma: float=0.5,
                  kappa: float=0.5,
                  eta: float=5.0,
                  T: float=0.1,
-                 symmetric: bool=True):
-        super().__init__(model, loss_func, theta, device, T)
-
-        self.projector_out_size = projector_out_size
-        self.predictor_width = 4096 
-        self.sym = symmetric
-
-        self.projector_student = build_linear_model(in_feature_dim=self.model_out_feature, out_feature_dim=self.projector_out_size, middle_feat_layers_dim=self.predictor_width)
-
-        self.projector_teacher = torch.optim.swa_utils.AveragedModel(self.projector_student, avg_fn=self.ema_avg_func)
+                 symmetric: bool=True) -> None:
         
-        self.predictor_knn = build_linear_model(in_feature_dim=self.projector_out_size, out_feature_dim=self.projector_out_size, middle_feat_layers_dim=self.predictor_width)
-
-        self.predictor_centroid = build_linear_model(in_feature_dim=self.projector_out_size, out_feature_dim=self.projector_out_size, middle_feat_layers_dim=self.predictor_width)
-
         encoder_layer = torch.nn.TransformerEncoderLayer(
-            d_model=self.projector_out_size,
+            d_model=projector_out_size,
             nhead=8,
-            dim_feedforward=self.projector_out_size * 2,
+            dim_feedforward=projector_out_size * 2,
             batch_first=True,
             dropout=0.1,
         )
 
-        self.transformer_encoder = torch.nn.TransformerEncoder(encoder_layer, num_layers=3)
+        projectors = [
+            ("projector", build_linear_model(in_feature_dim=model.out_features, out_feature_dim=projector_out_size, middle_feat_layers_dim=predictor_width)),
+            ("predictor_knn", build_linear_model(in_feature_dim=projector_out_size, out_feature_dim=projector_out_size, middle_feat_layers_dim=predictor_width)),
+            ("predictor_centroid", build_linear_model(in_feature_dim=projector_out_size, out_feature_dim=projector_out_size, middle_feat_layers_dim=predictor_width)),
+            ("transformer_encoder", torch.nn.TransformerEncoder(encoder_layer, num_layers=3))
+        ]
+        model = TeachingModelWrapper(model, projectors=projectors)
+
+        super().__init__(model, loss_func, theta, device, T)
+
+        self.projector_out_size = projector_out_size
+        self.predictor_width = predictor_width 
+        self.sym = symmetric
 
         self.buffer = buffer if buffer else SupportBufferKNN(k=5)
 
@@ -72,17 +73,15 @@ class All4One(BaseMomentum):
 
         for views in [(view1, view2), (view2, view1)][0:self.sym+1]:
             res_dict = super().train_step(views)
-            z_s = res_dict["z_student"]
-            z_t = res_dict["z_teacher"]
+
+            prj_s = self.student.projector(res_dict["student_out"])
+            prj_t = self.teacher.projector(res_dict["teacher_out"])
 
             if base_loss is None:
                 base_loss = res_dict["loss"]
-            
-            prj_s = self.projector_student(z_s)
-            prj_t = self.projector_teacher(z_t)
 
-            pred_s_knn = torch.nn.functional.normalize( self.predictor_knn(prj_s) )
-            pred_s_centroid = torch.nn.functional.normalize( self.predictor_centroid(prj_s) )
+            pred_s_knn = torch.nn.functional.normalize( self.student.predictor_knn(prj_s) )
+            pred_s_centroid = torch.nn.functional.normalize( self.student.predictor_centroid(prj_s) )
 
             kneighbors = self.buffer.find_nn(prj_t) # return normalised vectors
 
@@ -93,8 +92,8 @@ class All4One(BaseMomentum):
                 torch.cat((pred_s_centroid.unsqueeze(1), kneighbors), 1)[:, :5, :]
                 )
 
-            transf_t = self.transformer_encoder(pos_encod_knn)[:, 0:, :]
-            transf_s = self.transformer_encoder(poss_encod_pred_centroid)[:, 0:, :]
+            transf_t = self.student.transformer_encoder(pos_encod_knn)[:, 0:, :]
+            transf_s = self.student.transformer_encoder(poss_encod_pred_centroid)[:, 0:, :]
 
             corr_matrix = torch.nn.functional.normalize(prj_s, dim=1).T @ torch.nn.functional.normalize(prj_t, dim=1)
 
@@ -124,12 +123,3 @@ class All4One(BaseMomentum):
     
     def forward(self, x) -> dict:
         return self.train_step(x)
-    
-
-    def __call__(self, x):
-        return self.train_step(x)
-
-
-    def update_teacher_weights(self) -> None:
-        super().update_teacher_weights()
-        self.projector_teacher.update_parameters(self.projector_student)

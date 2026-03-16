@@ -29,7 +29,7 @@ class SupportBuffer(nn.Module):
     @torch.no_grad()
     def put(self, 
             batch: torch.Tensor) -> None:
-        batch = gather(batch)
+        # batch = gather(batch)
 
         shift = batch.shape[0]
 
@@ -46,8 +46,6 @@ class SupportBuffer(nn.Module):
             self.buffer[0:shift - tail] = batch[tail::]
 
         self.ptr.fill_((ptr + shift) % self.buffer_capacity) 
-
-
 
 
 class SupportBufferKNN(SupportBuffer):

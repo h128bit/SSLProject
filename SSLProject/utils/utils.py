@@ -1,3 +1,5 @@
+import inspect
+
 import torch
 
 
@@ -60,3 +62,32 @@ def cross_entropy(themperature: float=0.1):
         loss = -(teacher_probs * student_log_probs).sum(dim=1).mean() * (themperature ** 2)
         return loss
     return _inner
+
+
+
+
+def change_optimizer_and_sheduler(model, optim, sheduler):
+    optim_param = optim.__dict__["defaults"]
+    sig = inspect.signature(type(optim).__init__)
+    kk = list(sig.parameters.keys())[2::] # remove `self` and `parameters` param
+    params = [(k, optim_param[k]) for k in kk if k in optim_param]
+    params = dict(params)
+    new_optim = type(optim)(model.parameters(), **params)
+
+    if sheduler is not None:
+        sheduler.optimizer = new_optim
+        # sig = inspect.signature(type(sheduler).__init__)
+
+        # kk = list(sig.parameters.keys())[1::] # remove `self` param
+
+        # old_param = sheduler.__dict__
+        # params = [(k, old_param[k]) for k in kk if k in old_param]
+
+        # params = dict(params) 
+        # del params["optimizer"]
+
+        # new_sheduler = type(sheduler)(new_optim, **params)
+    # else:
+    #     new_sheduler = None
+    
+    return new_optim, sheduler

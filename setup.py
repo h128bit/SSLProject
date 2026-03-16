@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="sslproject",                  
-    version="1.0.7",                          
+    version="2.0.0",                          
     author="h128bit",
     description="Flex Implementation of self supervised learning methods ",
     url="https://github.com/h128bit/SSLProject",
@@ -17,8 +17,8 @@ setup(
     "pandas>=1.4.0",
     "Pillow>=9.0.0",        
     "timm>=0.9.0",
-    "torch>=2.0.0",
-    "torchvision>=0.15.0",
+    "torch==2.7.1",
+    "torchvision==0.22.1",
     "tqdm>=4.60.0",
     "info-nce-pytorch"
     ],
