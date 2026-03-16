@@ -49,6 +49,7 @@ class SimpleTrainer:
             self.method = wrap_model_at_fsdp(method, **kwargs) 
             self.method.to(f"cuda:{os.getenv("RANK")}")
             self.save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
+            self.is_main_rank = self.use_fsdp and dist.get_rank() == 0
             if torch.cuda.is_available():
                 self.logger.info(f"Use FSDP. Number GPUs: {torch.cuda.device_count()}")
             else:
@@ -57,6 +58,8 @@ class SimpleTrainer:
             self.method = method 
             self.logger.info(f"FSDP not use")
             self.use_fsdp = False
+            self.is_main_rank = True
+
  
         # recreate optimizer and sheduler. Need if model was wrapped into FSDP module 
         self.optimizer, self.sheduler = change_optimizer_and_sheduler(self.method.student, optimizer, sheduler)
@@ -72,20 +75,21 @@ class SimpleTrainer:
         self.save_model = save_model
         self.save_model_each_n_epochs = save_model_each_n_epochs
 
-        match logger:
-            case "simple":
-                self.process_logger = SimpleLogger(root=project_root_or_url,
-                                           project_name=project_name,
-                                           run_name=run_name) 
-                self.logger.info("SimpleLogger was created")
-            case "mlflow":
-                self.process_logger = SimpleMLFlowLogger(url=project_root_or_url,
-                                                 project_name=project_name,
-                                                 run_name=run_name)
-                self.logger.info("SimpleMLFlowLogger was created")
-            
-            case _:
-                raise ValueError(f"Unknow logger {logger}. Supported 'simple' or 'mlflow'")
+        if self.is_main_rank:
+            match logger:
+                case "simple":
+                    self.process_logger = SimpleLogger(root=project_root_or_url,
+                                            project_name=project_name,
+                                            run_name=run_name) 
+                    self.logger.info("SimpleLogger was created")
+                case "mlflow":
+                    self.process_logger = SimpleMLFlowLogger(url=project_root_or_url,
+                                                    project_name=project_name,
+                                                    run_name=run_name)
+                    self.logger.info("SimpleMLFlowLogger was created")
+                
+                case _:
+                    raise ValueError(f"Unknow logger {logger}. Supported 'simple' or 'mlflow'")
 
         self.step_history = {}
 
@@ -97,7 +101,10 @@ class SimpleTrainer:
         batches_per_epoch = len(self.dataloader)
 
         try:
+            
             for epoch in tqdm(range(self.num_epoch), desc="epoch: "):
+                if self.use_fsdp:
+                    self.dataloader.sampler.set_epoch(epoch)
                 for batch in tqdm(self.dataloader, desc="batch progress: ", total=batches_per_epoch, leave=False):
                     step += 1
                     
@@ -118,7 +125,8 @@ class SimpleTrainer:
                     if epoch >= self.start_update and step % self.update_each_n_step == 0:
                         self.method.update_teacher_weights()
                     
-                    self._update_step_history(loss_dict)
+                    if self.is_main_rank:
+                        self._update_step_history(loss_dict)
                 
                 if self.accumulate_grad and (step % self.accumulate_step != 0):
                     self.optimizer.step()
@@ -127,13 +135,14 @@ class SimpleTrainer:
                 if self.sheduler:
                     self.sheduler.step()
 
-                self._do_log(epoch)
+                if self.is_main_rank:
+                    self._do_log(epoch)
 
                 model_save_step = step//batches_per_epoch
                 if self.save_model and (epoch+1) % self.save_model_each_n_epochs == 0:
                     student = self.method.student
                     teacher = self.method.teacher
-                    if self.use_fsdp and dist.get_rank() == 0:
+                    if self.use_fsdp and self.is_main_rank:
                         with FSDP.state_dict_type(student, StateDictType.FULL_STATE_DICT, self.save_policy):
                             student_state = student.state_dict()
 
@@ -152,7 +161,8 @@ class SimpleTrainer:
                     dist.barrier()
 
         finally:
-            self.process_logger.end_experiment()
+            if self.is_main_rank:
+                self.process_logger.end_experiment()
 
 
     def _update_step_history(self, d: dict):
