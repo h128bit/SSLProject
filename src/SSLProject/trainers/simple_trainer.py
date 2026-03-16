@@ -95,8 +95,9 @@ class SimpleTrainer:
 
 
     def train(self): 
-        self.process_logger.start_experiment()
-        self.logger.info("===== Start training =====") 
+        if self.is_main_rank:
+            self.process_logger.start_experiment()
+            self.logger.info("===== Start training =====") 
         step = 0
         batches_per_epoch = len(self.dataloader)
 
@@ -139,10 +140,10 @@ class SimpleTrainer:
                     self._do_log(epoch)
 
                 model_save_step = step//batches_per_epoch
-                if self.save_model and (epoch+1) % self.save_model_each_n_epochs == 0:
+                if self.save_model and (epoch+1) % self.save_model_each_n_epochs == 0 and self.is_main_rank:
                     student = self.method.student
                     teacher = self.method.teacher
-                    if self.use_fsdp and self.is_main_rank:
+                    if self.use_fsdp:
                         with FSDP.state_dict_type(student, StateDictType.FULL_STATE_DICT, self.save_policy):
                             student_state = student.state_dict()
 
