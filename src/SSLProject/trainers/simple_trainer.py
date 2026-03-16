@@ -57,9 +57,7 @@ class SimpleTrainer:
             self.method = method 
             self.logger.info(f"FSDP not use")
             self.use_fsdp = False
-
-        # self.optimizer = optimizer    
-        # self.sheduler = sheduler 
+ 
         # recreate optimizer and sheduler. Need if model was wrapped into FSDP module 
         self.optimizer, self.sheduler = change_optimizer_and_sheduler(self.method.student, optimizer, sheduler)
         self.dataloader = dataloader
@@ -155,8 +153,6 @@ class SimpleTrainer:
 
         finally:
             self.process_logger.end_experiment()
-            if self.use_fsdp:
-                dist.destroy_process_group()
 
 
     def _update_step_history(self, d: dict):
