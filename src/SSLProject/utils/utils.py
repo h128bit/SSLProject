@@ -75,19 +75,12 @@ def change_optimizer_and_sheduler(model, optim, sheduler):
     new_optim = type(optim)(model.parameters(), **params)
 
     if sheduler is not None:
-        sheduler.optimizer = new_optim
-        # sig = inspect.signature(type(sheduler).__init__)
-
-        # kk = list(sig.parameters.keys())[1::] # remove `self` param
-
-        # old_param = sheduler.__dict__
-        # params = [(k, old_param[k]) for k in kk if k in old_param]
-
-        # params = dict(params) 
-        # del params["optimizer"]
-
-        # new_sheduler = type(sheduler)(new_optim, **params)
-    # else:
-    #     new_sheduler = None
+        sig = inspect.signature(type(sheduler).__init__)
+        params = list(sig.parameters.keys())
+        for to_rem in ["self", "optimizer", "initial_lr", "last_epoch"]:
+            if to_rem in params:
+                params.remove(to_rem)
+        param = {k: sheduler.__dict__[k] for k in params}
+        sheduler = type(sheduler)(optimizer=new_optim, **param)
     
     return new_optim, sheduler
