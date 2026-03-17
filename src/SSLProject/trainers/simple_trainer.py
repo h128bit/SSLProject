@@ -47,10 +47,12 @@ class SimpleTrainer:
         # sharding the model if allowed
         self.use_fsdp = use_fsdp
         if use_fsdp:
-            self.model_copy = copy.deepcopy(method.student).cpu()
+            self.is_main_rank = self.use_fsdp and dist.get_rank() == 0
+            if self.is_main_rank:
+                with torch.no_grad():
+                    self.model_copy = copy.deepcopy(method.student).cpu()
             self.method = wrap_model_at_fsdp(method, **kwargs) 
             self.save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
-            self.is_main_rank = self.use_fsdp and dist.get_rank() == 0
             if torch.cuda.is_available():
                 self.logger.info(f"Use FSDP. Number GPUs: {torch.cuda.device_count()}")
             else:
@@ -66,7 +68,6 @@ class SimpleTrainer:
         # self.optimizer, self.sheduler = change_optimizer_and_sheduler(self.method.student, optimizer, sheduler)
         if optim_param is None:
             optim_param = {}
-        optim_param['foreach'] = False 
         self.optimizer = optimizer(self.method.student.parameters(), **optim_param)
         if sheduler_param is None:
             sheduler_param = {}
