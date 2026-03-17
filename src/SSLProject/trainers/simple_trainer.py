@@ -27,6 +27,8 @@ class SimpleTrainer:
                  num_epoch: int, 
                  dataloader: Iterable,
                  sheduler: torch.optim.lr_scheduler.LRScheduler,
+                 optim_param: dict|None=None,
+                 sheduler_param: dict|None=None,
                  update_teacher_after_n_epoch: int=0,
                  update_teacher_each_n_step: int=1,
                  save_model: bool=True,
@@ -47,7 +49,6 @@ class SimpleTrainer:
         if use_fsdp:
             self.model_copy = copy.deepcopy(method.student).cpu()
             self.method = wrap_model_at_fsdp(method, **kwargs) 
-            # self.method.to(f"cuda:0")
             self.save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
             self.is_main_rank = self.use_fsdp and dist.get_rank() == 0
             if torch.cuda.is_available():
@@ -62,7 +63,14 @@ class SimpleTrainer:
 
  
         # recreate optimizer and sheduler. Need if model was wrapped into FSDP module 
-        self.optimizer, self.sheduler = change_optimizer_and_sheduler(self.method.student, optimizer, sheduler)
+        # self.optimizer, self.sheduler = change_optimizer_and_sheduler(self.method.student, optimizer, sheduler)
+        if optim_param is None:
+            optim_param = {}
+        self.optimizer = optimizer(self.method.student.parameters(), **optim_param)
+        if sheduler_param is None:
+            sheduler_param = {}
+        self.sheduler = sheduler(self.optimizer, **sheduler_param)
+        
         self.dataloader = dataloader
 
         self.num_epoch = num_epoch

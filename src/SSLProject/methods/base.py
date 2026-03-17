@@ -62,7 +62,7 @@ class BaseMomentum(BaseMethod):
 
         # Exponential Moving Average (EMA)
         self.ema_avg_func = lambda avg_model_param, model_param: self.theta * avg_model_param + (1 - self.theta) * model_param
-        self.teacher = copy.deepcopy(self.student) #  torch.optim.swa_utils.AveragedModel(self.student, avg_fn=self.ema_avg_func)
+        self.teacher = copy.deepcopy(self.student) 
 
         self._active_modules.append("teacher")
 
@@ -70,10 +70,10 @@ class BaseMomentum(BaseMethod):
     def update_teacher_weights(self) -> None:
         with torch.no_grad():
             for param_s, param_t in zip(self.student.parameters(), self.teacher.parameters()):
-                param_t.data = self.ema_avg_func(param_t, param_s)  # param_t.data * self.theta + param_s.data * (1.0 - self.theta)
+                param_t.data = self.ema_avg_func(param_t, param_s)  
             
             for buf_s, buf_t in zip(self.student.buffers(), self.teacher.buffers()):
-                buf_t.data = self.ema_avg_func(buf_t, buf_s) #   buf_t.data * self.theta + buf_s.data * (1.0 - self.theta)
+                buf_t.data = self.ema_avg_func(buf_t, buf_s) 
     
 
     def forward(self, x) -> dict:
