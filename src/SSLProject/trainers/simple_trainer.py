@@ -66,11 +66,12 @@ class SimpleTrainer:
         # self.optimizer, self.sheduler = change_optimizer_and_sheduler(self.method.student, optimizer, sheduler)
         if optim_param is None:
             optim_param = {}
+        optim_param['foreach'] = False 
         self.optimizer = optimizer(self.method.student.parameters(), **optim_param)
         if sheduler_param is None:
             sheduler_param = {}
         self.sheduler = sheduler(self.optimizer, **sheduler_param)
-        
+
         self.dataloader = dataloader
 
         self.num_epoch = num_epoch
