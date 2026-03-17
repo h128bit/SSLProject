@@ -106,6 +106,7 @@ class SimpleTrainer:
             for epoch in tqdm(range(self.num_epoch), desc="epoch: "):
                 if self.use_fsdp:
                     self.dataloader.sampler.set_epoch(epoch)
+
                 for batch in tqdm(self.dataloader, desc="batch progress: ", total=batches_per_epoch, leave=False):
                     step += 1
                     
