@@ -22,8 +22,8 @@ class FSDPPrepare:
         optim_param = optim_param if optim_param  else {}
         sheduler_param = sheduler_param if sheduler_param  else {}
 
-        method.student = FSDP(method.student, **wrap_policy)
-        method.teacher = FSDP(method.teacher, **wrap_policy) if wrap_teacher else method.teacher
+        method.student = FSDP(method.student, **wrap_policy, use_orig_params=True)
+        method.teacher = FSDP(method.teacher, **wrap_policy, use_orig_params=True) if wrap_teacher else method.teacher
 
         optimizer = optimizer(method.student.parameters(), **optim_param)
         if sheduler:
