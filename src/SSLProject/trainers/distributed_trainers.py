@@ -103,8 +103,8 @@ class FSDPTrainer(BaseTrainer):
 
     def save_model_hook(self, model_save_step: int):
         if self.is_main_rank:
-            student = self.method.student
-            teacher = self.method.teacher
+            student = self.method.student.model
+            teacher = self.method.teacher.model
             
             with FSDP.state_dict_type(student, StateDictType.FULL_STATE_DICT, self.save_policy):
                 student_state = student.state_dict()
