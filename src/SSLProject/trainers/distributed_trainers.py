@@ -47,7 +47,8 @@ class FSDPTrainer(BaseTrainer):
                                                           sheduler=sheduler, 
                                                           sheduler_param=sheduler_param)
         self.save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
-        method.to(torch.cuda.current_device())
+        rank = int(os.environ.get("LOCAL_RANK", 0))
+        method.to(f"cuda:{rank}")
         super().__init__(method, 
                          optimizer, 
                          num_epoch, 
