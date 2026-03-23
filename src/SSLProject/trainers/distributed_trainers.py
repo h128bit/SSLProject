@@ -41,14 +41,15 @@ class FSDPTrainer(BaseTrainer):
                 self.model_copy = copy.deepcopy(method.student).cpu().eval()
                 # self.model_copy.requires_grad_ = False
 
+        rank = int(os.environ.get("LOCAL_RANK", 0))
+        method.to(f"cuda:{rank}")
         method, optimizer, sheduler = FSDPPrepare.prepare(method=method, 
                                                           optimizer=optimizer, 
                                                           optim_param=optim_param, 
                                                           sheduler=sheduler, 
                                                           sheduler_param=sheduler_param)
         self.save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
-        rank = int(os.environ.get("LOCAL_RANK", 0))
-        method.to(f"cuda:{rank}")
+    
         super().__init__(method, 
                          optimizer, 
                          num_epoch, 
