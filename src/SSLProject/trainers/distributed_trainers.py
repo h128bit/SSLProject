@@ -6,13 +6,6 @@ from contextlib import nullcontext
 import torch
 import torch.distributed as dist
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP, FullStateDictConfig, StateDictType
-
-# from SSLProject.utils.enviroment_utils import is_notebook
-# if is_notebook():
-#     from tqdm.notebook import tqdm 
-# else:
-#     from tqdm import tqdm 
-
 from SSLProject.data_parallel.shared_data_parallel import FSDPPrepare
 from SSLProject.methods.base import BaseMomentum
 from SSLProject.trainers.base import BaseTrainer
@@ -72,6 +65,7 @@ class FSDPTrainer(BaseTrainer):
                          accumulate_step,
                          create_process_logger=False
                          )
+        self.method.to(torch.cuda.current_device())
         if self.is_main_rank:
             self.logger.info(f"Use FSDP. Number GPUs: {torch.cuda.device_count()}")
             self.process_logger = get_process_logger(logger, self.project_root, self.project_name, self.run_name)
@@ -104,8 +98,8 @@ class FSDPTrainer(BaseTrainer):
 
     def update_teacher_weights(self):
         with FSDP.summon_full_params(self.method.student, writeback=False):
-            with FSDP.summon_full_params(self.method.teacher, writeback=True):
-                self.method.update_teacher_weights()
+            # with FSDP.summon_full_params(self.method.teacher, writeback=True):
+            self.method.update_teacher_weights()
 
 
     def save_model_hook(self, model_save_step: int):
