@@ -40,19 +40,12 @@ class FSDPTrainer(BaseTrainer):
             with torch.no_grad():
                 self.model_copy = copy.deepcopy(method.student).cpu().eval()
 
-        rank = int(os.environ.get("LOCAL_RANK", 0))
-        method.to(f"cuda:{rank}")
-
         method, optimizer, sheduler = FSDPPrepare.prepare(method=method, 
                                                           optimizer=optimizer, 
                                                           optim_param=optim_param, 
                                                           sheduler=sheduler, 
                                                           sheduler_param=sheduler_param)
         self.save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
-
-        # rank = int(os.environ.get("LOCAL_RANK", 0))
-        # method.teacher.to(f"cuda:{rank}")
-        # method.buffer.to(f"cuda:{rank}")
 
         super().__init__(method, 
                          optimizer, 
@@ -90,11 +83,6 @@ class FSDPTrainer(BaseTrainer):
         
         # sync grad
         with context:
-            rank = int(os.environ.get("LOCAL_RANK", 0))
-            v1, v2 = batch 
-            v1.to(f"cuda:{rank}"); v2.to(f"cuda:{rank}")
-            batch = [v1, v2]
-
             loss_dict = self.method(batch)
             loss = loss_dict["loss"]
             loss = loss / self.accumulate_step
@@ -134,6 +122,7 @@ class FSDPTrainer(BaseTrainer):
     def end_train_hook(self):
         if self.is_main_rank:
             self.process_logger.end_experiment()
+
 
     def _update_step_history(self, d: dict):
         if self.is_main_rank:

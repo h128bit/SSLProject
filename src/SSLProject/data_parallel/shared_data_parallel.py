@@ -16,7 +16,7 @@ class FSDPPrepare:
                 sheduler: Callable|None=None,
                 sheduler_param: dict|None=None,
                 wrap_policy: dict|None=None,
-                wrap_teacher: bool=False):
+                wrap_teacher: bool=True):
         
         wrap_policy = wrap_policy if wrap_policy  else {}
         optim_param = optim_param if optim_param  else {}
