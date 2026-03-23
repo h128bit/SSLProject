@@ -38,7 +38,7 @@ class FSDPTrainer(BaseTrainer):
 
         if self.is_main_rank:
             with torch.no_grad():
-                self.model_copy = copy.deepcopy(method.student).cpu().eval()
+                self.model_copy = copy.deepcopy(method.student.model).cpu().eval()
 
         method, optimizer, sheduler = FSDPPrepare.prepare(method=method, 
                                                           optimizer=optimizer, 
@@ -103,14 +103,14 @@ class FSDPTrainer(BaseTrainer):
 
     def save_model_hook(self, model_save_step: int):
         if self.is_main_rank:
-            student = self.method.student.model
-            teacher = self.method.teacher.model
+            student = self.method.student
+            teacher = self.method.teacher
             
             with FSDP.state_dict_type(student, StateDictType.FULL_STATE_DICT, self.save_policy):
-                student_state = student.state_dict()
+                student_state = student.model.state_dict()
 
             with FSDP.state_dict_type(teacher, StateDictType.FULL_STATE_DICT, self.save_policy):
-                teacher_state = teacher.state_dict()
+                teacher_state = teacher.model.state_dict()
 
                 self.model_copy.load_state_dict(student_state, strict=False)
                 self.process_logger.save_model_state_dict(self.model_copy, "student_model", model_save_step)
