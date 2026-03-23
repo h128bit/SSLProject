@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sslproject"
-version = "2.2.3dev5"
+version = "2.2.3dev6"
 description = "Flex Implementation of self supervised learning methods"
 readme = "README.md"
 requires-python = ">=3.10"
