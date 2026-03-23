@@ -47,7 +47,7 @@ class FSDPTrainer(BaseTrainer):
                                                           sheduler=sheduler, 
                                                           sheduler_param=sheduler_param)
         self.save_policy = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
-
+        method.to(torch.cuda.current_device())
         super().__init__(method, 
                          optimizer, 
                          num_epoch, 
@@ -65,7 +65,7 @@ class FSDPTrainer(BaseTrainer):
                          accumulate_step,
                          create_process_logger=False
                          )
-        self.method.to(torch.cuda.current_device())
+        
         if self.is_main_rank:
             self.logger.info(f"Use FSDP. Number GPUs: {torch.cuda.device_count()}")
             self.process_logger = get_process_logger(logger, self.project_root, self.project_name, self.run_name)
