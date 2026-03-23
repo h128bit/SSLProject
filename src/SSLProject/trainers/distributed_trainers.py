@@ -38,7 +38,7 @@ class FSDPTrainer(BaseTrainer):
 
         if self.is_main_rank:
             with torch.no_grad():
-                self.model_copy = copy.deepcopy(method.student.model).cpu().eval()
+                self.model_copy = copy.deepcopy(method.student).cpu().eval()
 
         method, optimizer, sheduler = FSDPPrepare.prepare(method=method, 
                                                           optimizer=optimizer, 
@@ -81,7 +81,6 @@ class FSDPTrainer(BaseTrainer):
     def train_step(self, batch, do_step) -> dict:
         context = self.method.student.no_sync() if not do_step else nullcontext()
         
-        # sync grad
         with context:
             loss_dict = self.method(batch)
             loss = loss_dict["loss"]
@@ -107,14 +106,15 @@ class FSDPTrainer(BaseTrainer):
             teacher = self.method.teacher
             
             with FSDP.state_dict_type(student, StateDictType.FULL_STATE_DICT, self.save_policy):
-                student_state = student.model.state_dict()
+                student_state = student.state_dict()
 
             with FSDP.state_dict_type(teacher, StateDictType.FULL_STATE_DICT, self.save_policy):
-                teacher_state = teacher.model.state_dict()
+                teacher_state = teacher.state_dict()
 
-                self.model_copy.load_state_dict(student_state, strict=False)
+            with torch.no_grad():
+                self.model_copy.load_state_dict(student_state, strict=False).eval()
                 self.process_logger.save_model_state_dict(self.model_copy, "student_model", model_save_step)
-                self.model_copy.load_state_dict(teacher_state, strict=False)
+                self.model_copy.load_state_dict(teacher_state, strict=False).eval()
                 self.process_logger.save_model_state_dict(self.model_copy, "teacher_model", model_save_step)
         dist.barrier()
 
