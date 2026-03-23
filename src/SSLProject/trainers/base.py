@@ -35,14 +35,16 @@ class BaseTrainer:
                  run_name: str="ssl_run",
                  logger: str="simple",
                  accumulate_grad: bool=True,
-                 accumulate_step: int=1): 
+                 accumulate_step: int=1,
+                 create_process_logger=True): 
         self.logger = get_logger("TrainerLogger")
 
         self.project_root = project_root_or_url
         self.project_name = project_name
         self.run_name = run_name 
-        self.process_logger = get_process_logger(logger, self.project_root, self.project_name, self.run_name)
-        self.logger.info(f"{type(self.process_logger)} was created")
+        if create_process_logger:
+            self.process_logger = get_process_logger(logger, self.project_root, self.project_name, self.run_name)
+            self.logger.info(f"{type(self.process_logger)} was created")
         
         self.num_epoch = num_epoch
 

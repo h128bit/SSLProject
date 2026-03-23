@@ -16,6 +16,7 @@ from torch.distributed.fsdp import FullyShardedDataParallel as FSDP, FullStateDi
 from SSLProject.data_parallel.shared_data_parallel import FSDPPrepare
 from SSLProject.methods.base import BaseMomentum
 from SSLProject.trainers.base import BaseTrainer
+from SSLProject.trainers.loggers import get_process_logger
 
 
 
@@ -68,10 +69,13 @@ class FSDPTrainer(BaseTrainer):
                          run_name, 
                          logger, 
                          accumulate_grad, 
-                         accumulate_step
+                         accumulate_step,
+                         create_process_logger=False
                          )
-
-        self.logger.info(f"Use FSDP. Number GPUs: {torch.cuda.device_count()}")
+        if self.is_main_rank:
+            self.logger.info(f"Use FSDP. Number GPUs: {torch.cuda.device_count()}")
+            self.process_logger = get_process_logger(logger, self.project_root, self.project_name, self.run_name)
+            self.logger.info(f"{type(self.process_logger)} was created")
 
 
     def start_train_hook(self):
