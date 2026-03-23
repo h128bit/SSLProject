@@ -97,8 +97,8 @@ class FSDPTrainer(BaseTrainer):
 
     def update_teacher_weights(self):
         with FSDP.summon_full_params(self.method.student, writeback=False):
-            # with FSDP.summon_full_params(self.method.teacher, writeback=True):
-            self.method.update_teacher_weights()
+            with FSDP.summon_full_params(self.method.teacher, writeback=True):
+                self.method.update_teacher_weights()
 
 
     def save_model_hook(self, model_save_step: int):
