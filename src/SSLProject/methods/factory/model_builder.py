@@ -1,3 +1,4 @@
+import copy
 from torch import nn
 
 
@@ -29,11 +30,9 @@ def build_linear_model(in_feature_dim: int,
     return model
 
 
-
 class TeachingModelWrapper(nn.Module):
     def __init__(self, model, projectors: list[tuple[str, nn.Module]]|None = None) -> None:
         super().__init__()
-
 
         self.model = model 
         self.out_features = model.out_features
@@ -43,5 +42,23 @@ class TeachingModelWrapper(nn.Module):
                 setattr(self, name, module)
 
     def forward(self, x) -> dict:
-        model_out = self.model(x)
-        return model_out
+        out = self.model(x)
+        return out
+
+
+class TeacherStudentBuilder:
+    def __init__(self):
+        pass 
+
+    @staticmethod
+    def build(
+        model: nn.Module, 
+        projectors: list[tuple[str, nn.Module]]
+        ):
+
+        st = model 
+        th = copy.deepcopy(st)
+        st = TeachingModelWrapper(st, projectors)
+        th = TeachingModelWrapper(th, projectors).eval()
+
+        return st, th

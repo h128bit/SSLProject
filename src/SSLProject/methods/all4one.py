@@ -1,11 +1,13 @@
-from typing import Callable, Tuple
+from typing import Callable
 import torch 
 
 from info_nce import InfoNCE
 
 from SSLProject.methods.base import BaseMomentum
-from SSLProject.utils import PositionalEncoding, SupportBufferKNN, SupportBuffer, off_diagonal, build_linear_model
-from SSLProject.utils.submodel_builder import TeachingModelWrapper
+from SSLProject.support_set import SupportBufferKNN, SupportBuffer
+
+from SSLProject.utils import PositionalEncoding, off_diagonal
+from SSLProject.methods.factory.model_builder import build_linear_model, TeacherStudentBuilder
 
 
 
@@ -13,8 +15,7 @@ class All4One(BaseMomentum):
     def __init__(self, 
                  model: torch.nn.Module, 
                  loss_func: Callable[[torch.Tensor, torch.Tensor], torch.Tensor]|None=None, 
-                 theta: float=0.98, 
-                 device: str|None=None,
+                 theta: float=0.98,
                  projector_out_size: int=256, 
                  predictor_width: int|list[int]=4096,
                  buffer: SupportBuffer|None=None, 
@@ -40,9 +41,9 @@ class All4One(BaseMomentum):
             ("predictor_centroid", build_linear_model(in_feature_dim=projector_out_size, out_feature_dim=projector_out_size, middle_feat_layers_dim=predictor_width)),
             ("transformer_encoder", torch.nn.TransformerEncoder(encoder_layer, num_layers=3))
         ]
-        model = TeachingModelWrapper(model, projectors=projectors)
+        student, teacher = TeacherStudentBuilder.build(model, projectors=projectors)
 
-        super().__init__(model, loss_func, theta, device, T)
+        super().__init__(student, teacher, loss_func, T, theta)
 
         self.projector_out_size = projector_out_size
         self.predictor_width = predictor_width 

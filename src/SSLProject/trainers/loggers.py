@@ -175,3 +175,21 @@ class SimpleMLFlowLogger(LoggerInterface):
     def end_experiment(self) -> None:
         if mlflow.active_run():
             mlflow.end_run()
+
+
+
+def get_process_logger(logger, project_root_or_url, project_name, run_name):
+        match logger:
+            case "simple":
+                process_logger = SimpleLogger(root=project_root_or_url,
+                                                   project_name=project_name,
+                                                   run_name=run_name) 
+
+            case "mlflow":
+                process_logger = SimpleMLFlowLogger(url=project_root_or_url,
+                                                         project_name=project_name,
+                                                         run_name=run_name)
+                
+            case _:
+                raise ValueError(f"Unknow logger {logger}. Supported 'simple' or 'mlflow'")
+        return process_logger

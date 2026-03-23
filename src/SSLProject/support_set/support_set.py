@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from SSLProject.utils.utils import gather
+import torch.distributed as dist
 
 
 class SupportBuffer(nn.Module):
@@ -29,7 +30,7 @@ class SupportBuffer(nn.Module):
     @torch.no_grad()
     def put(self, 
             batch: torch.Tensor) -> None:
-        # batch = gather(batch)
+        batch = gather(batch)
 
         shift = batch.shape[0]
 
