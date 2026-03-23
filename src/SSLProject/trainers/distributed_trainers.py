@@ -112,10 +112,10 @@ class FSDPTrainer(BaseTrainer):
                 teacher_state = teacher.state_dict()
 
             with torch.no_grad():
-                self.model_copy.load_state_dict(student_state, strict=False).eval()
-                self.process_logger.save_model_state_dict(self.model_copy, "student_model", model_save_step)
-                self.model_copy.load_state_dict(teacher_state, strict=False).eval()
-                self.process_logger.save_model_state_dict(self.model_copy, "teacher_model", model_save_step)
+                self.model_copy.load_state_dict(student_state, strict=False)
+                self.process_logger.save_model_state_dict(self.model_copy.eval(), "student_model", model_save_step)
+                self.model_copy.load_state_dict(teacher_state, strict=False)
+                self.process_logger.save_model_state_dict(self.model_copy.eval(), "teacher_model", model_save_step)
         dist.barrier()
 
 
