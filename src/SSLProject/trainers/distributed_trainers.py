@@ -92,7 +92,7 @@ class FSDPTrainer(BaseTrainer):
         with context:
             rank = int(os.environ.get("LOCAL_RANK", 0))
             v1, v2 = batch 
-            v1.to(f"cuda{rank}"); v2.to(f"cuda{rank}")
+            v1.to(f"cuda:{rank}"); v2.to(f"cuda:{rank}")
             batch = [v1, v2]
 
             loss_dict = self.method(batch)
