@@ -2,9 +2,18 @@ import copy
 from torch import nn
 
 
+class DebugBlock(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x):
+        print(f"DEBUG BLOCK: INPUT SHAPE {x.shape}")
+        return x
+
 
 def linear_block(in_feat, out_feat) -> nn.Sequential:
     return nn.Sequential(
+        DebugBlock(),
         nn.Linear(in_feat, out_feat),
         nn.BatchNorm1d(out_feat),
         nn.LeakyReLU()
