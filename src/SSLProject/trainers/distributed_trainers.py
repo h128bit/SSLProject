@@ -80,6 +80,10 @@ class FSDPTrainer(BaseTrainer):
 
     def train_step(self, batch, do_step) -> dict:
         context = self.method.student.no_sync() if not do_step else nullcontext()
+
+        device = f"cuda:{int(os.getenv("LOCAL_RANK", 0))}"
+        batch[0] = batch[0].to(device)
+        batch[1] = batch[1].to(device)
         
         with context:
             loss_dict = self.method(batch)
@@ -96,11 +100,11 @@ class FSDPTrainer(BaseTrainer):
 
     def update_teacher_weights(self):
         with FSDP.summon_full_params(self.method.student, writeback=False):
-            with FSDP.summon_full_params(self.method.teacher, writeback=True):
-                self.method.update_teacher_weights()
+            self.method.update_teacher_weights()
 
 
     def save_model_hook(self, model_save_step: int):
+        dist.barrier()
         if self.is_main_rank:
             student = self.method.student
             teacher = self.method.teacher
@@ -108,15 +112,16 @@ class FSDPTrainer(BaseTrainer):
             with FSDP.state_dict_type(student, StateDictType.FULL_STATE_DICT, self.save_policy):
                 student_state = student.state_dict()
 
-            with FSDP.state_dict_type(teacher, StateDictType.FULL_STATE_DICT, self.save_policy):
-                teacher_state = teacher.state_dict()
+            teacher_state = teacher.state_dict()
+            # with FSDP.state_dict_type(teacher, StateDictType.FULL_STATE_DICT, self.save_policy):
+            #     teacher_state = teacher.state_dict()
 
             with torch.no_grad():
                 self.model_copy.load_state_dict(student_state, strict=False)
                 self.process_logger.save_model_state_dict(self.model_copy.eval(), "student_model", model_save_step)
                 self.model_copy.load_state_dict(teacher_state, strict=False)
                 self.process_logger.save_model_state_dict(self.model_copy.eval(), "teacher_model", model_save_step)
-        dist.barrier()
+        
 
 
     def end_train_hook(self):

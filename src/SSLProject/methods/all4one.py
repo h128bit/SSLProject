@@ -59,6 +59,11 @@ class All4One(BaseMomentum):
         self.a2 = kappa
         self.a3 = eta
 
+        for param in self.teacher.parameters():
+            param.requires_grad = False
+        for param in self.buffer.parameters():
+            param.requires_grad = False
+
 
     def train_step(self, batch: tuple[torch.Tensor, torch.Tensor]) -> dict[str, torch.Tensor]:
         view1, view2 = batch
