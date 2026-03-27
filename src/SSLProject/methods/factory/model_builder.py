@@ -17,7 +17,7 @@ def linear_block(in_feat, out_feat) -> nn.Sequential:
     return nn.Sequential(
         DebugBlock(),
         nn.Linear(in_feat, out_feat),
-        nn.BatchNorm1d(out_feat),
+        # nn.BatchNorm1d(out_feat),
         nn.LeakyReLU()
     )
 
@@ -51,23 +51,10 @@ class TeachingModelWrapper(nn.Module):
         if projectors:
             for name, module in projectors:
                 setattr(self, name, module)
-        # self.projectors = nn.ModuleDict()
-        # if projectors:
-        #     for name, module in projectors:
-        #         self.projectors[name] = module
 
     def forward(self, x) -> dict:
         out = self.model(x)
         return out
-    
-
-    # def __getattr__(self, name: str):
-    #     try:
-    #         return super().__getattr__(name)
-    #     except AttributeError:
-    #         if 'projectors' in self._modules and name in self._modules['projectors']:
-    #             return self.projectors[name]
-    #         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
 
 class TeacherStudentBuilder:
