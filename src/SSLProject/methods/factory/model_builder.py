@@ -7,7 +7,7 @@ from torch import nn
 def linear_block(in_feat, out_feat) -> nn.Sequential:
     return nn.Sequential(
         nn.Linear(in_feat, out_feat),
-        nn.BatchNorm1d(out_feat),
+        nn.LayerNorm(out_feat),
         nn.LeakyReLU()
     )
 
