@@ -1,4 +1,5 @@
 import copy
+import torch
 from torch import nn
 
 
@@ -8,6 +9,7 @@ class DebugBlock(nn.Module):
 
     def forward(self, x):
         print(f"DEBUG BLOCK: INPUT SHAPE {x.shape}")
+        torch.atleast_2d(x)
         return x
 
 
