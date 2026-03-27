@@ -23,7 +23,7 @@ class FSDPPrepare:
         optim_param = optim_param if optim_param  else {}
         sheduler_param = sheduler_param if sheduler_param  else {}
 
-        method.student = nn.SyncBatchNorm.convert_sync_batchnorm(method.student)
+        # method.student = nn.SyncBatchNorm.convert_sync_batchnorm(method.student)
 
         method.student = FSDP(method.student, **wrap_policy, use_orig_params=True)
 
