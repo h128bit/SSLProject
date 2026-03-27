@@ -80,6 +80,9 @@ class All4One(BaseMomentum):
         for views in [(view1, view2), (view2, view1)][0:self.sym+1]:
             res_dict = super().train_step(views)
 
+            print(f"STUDENT OUT SHAPE {res_dict["student_out"].shape}")
+            print(f"TEACHER OUT SHAPE {res_dict["teacher_out"].shape}")
+
             prj_s = self.student.projector(res_dict["student_out"])
             prj_t = self.teacher.projector(res_dict["teacher_out"])
 
