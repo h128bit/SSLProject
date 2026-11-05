@@ -1,1 +1,1 @@
-# from SSLProject.trainers.simple_trainer import SimpleTrainer
+from SSLProject.trainers.ddp_trainer import DDPTrainer

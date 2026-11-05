@@ -13,7 +13,7 @@ class SupportBuffer(nn.Module):
         self.register_buffer("batch_capacity_", torch.tensor(buffer_capacity, dtype=torch.int32)) # scalar
         self.register_buffer("vectors_dim_", torch.tensor(vectors_dim, dtype=torch.int32)) # scalar
         self.register_buffer("ptr", torch.tensor(0, dtype=torch.int32)) # scalar
-        self.register_buffer("buffer", nn.functional.normalize(torch.rand(buffer_capacity, vectors_dim), dim=0)) 
+        self.register_buffer("buffer", nn.functional.normalize(torch.rand(buffer_capacity, vectors_dim), dim=1)) 
         # self.register_buffer("buffer_idx", -1 * torch.ones(buffer_capacity, dtype=torch.int32))
 
 

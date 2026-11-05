@@ -73,10 +73,11 @@ class All4One(BaseMomentum):
         centroid_loss = 0
         red_loss = 0
 
-        sym_coef = 1 / (self.sym + 1)
+        sym_coef = 1 / (self.sym + 1) # 1 if sym is False and 0.5 else
 
         update_buffer = False
 
+        # symmetric train step
         for views in [(view1, view2), (view2, view1)][0:self.sym+1]:
             res_dict = super().train_step(views)
 
@@ -125,7 +126,7 @@ class All4One(BaseMomentum):
             "centroid_loss": centroid_loss,
             "red_loss": red_loss,
             "loss": final_loss
-        }
+            }
     
     def forward(self, x) -> dict:
         return self.train_step(x)
