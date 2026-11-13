@@ -94,7 +94,7 @@ class DDPTrainer:
 
     def step_scheduler(self, engine):
         if self.scheduler:
-            self.scheduler.step()
+            self.scheduler.step(engine.state.epoch - 1)
 
 
     def _write_in_csv_table(self, path, data):
