@@ -25,7 +25,8 @@ class DDPTrainer:
         self.update_teacher_after_n_epoch = update_teacher_after_n_epoch
         self.update_teacher_each_n_epoch = update_teacher_each_n_epoch
 
-        self.method = method.to(self.device)
+        self.method = method
+        self.method.to(self.device)
         self.method = idist.auto_model(self.method)
 
         self.optimizer = idist.auto_optim(optimizer)
