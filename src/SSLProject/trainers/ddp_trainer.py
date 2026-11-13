@@ -59,8 +59,8 @@ class DDPTrainer:
                     else:
                         break
                 self.log_path = tmp 
-            self.log_path.mkdir(parents=True, exist_ok=True)
-            
+            self.log_path.mkdir(parents=True)
+
             self.train_columns = ["epoch", "iteration"] + self.loss_keys
             self.log_table_path = self.log_path / "trsin_loss.csv"
             pd.DataFrame(columns=self.train_columns).to_csv(self.log_table_path, columns=self.train_columns, index=False)
