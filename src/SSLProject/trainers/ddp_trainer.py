@@ -28,6 +28,7 @@ class DDPTrainer:
 
         self.method = method
         self.method.to(self.device)
+        print("ddp trainer | start auto wrap model")
         self.method = idist.auto_model(self.method)
         print(f"ddp trainer | model created")
 
