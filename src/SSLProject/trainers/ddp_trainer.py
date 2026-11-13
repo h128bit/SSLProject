@@ -15,7 +15,6 @@ class DDPTrainer:
     def __init__(self, 
                  method: BaseMomentum,
                  num_epoch: int,
-                 dataset,
                  optimizer,
                  scheduler,
                  update_teacher_after_n_epoch: int=0,
@@ -30,8 +29,6 @@ class DDPTrainer:
 
         self.method = method.to(self.device)
         self.method = idist.auto_model(self.method)
-
-        self.dataset = idist.dataset(dataset)
 
         self.optimizer = idist.auto_optim(optimizer)
         self.scheduler = scheduler
