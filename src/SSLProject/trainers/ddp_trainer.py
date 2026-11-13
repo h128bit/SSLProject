@@ -22,24 +22,30 @@ class DDPTrainer:
                  ):
         self.device = idist.device()
 
+        print(f"ddp trainer | device {self.device}")
         self.update_teacher_after_n_epoch = update_teacher_after_n_epoch
         self.update_teacher_each_n_epoch = update_teacher_each_n_epoch
 
         self.method = method
         self.method.to(self.device)
         self.method = idist.auto_model(self.method)
+        print(f"ddp trainer | model created")
 
         self.optimizer = idist.auto_optim(optimizer)
         self.scheduler = scheduler
+        print(f"ddp trainer | optimizer created")
 
+        print(f"ddp trainer | start create handlers")
         self.trainer_engine = Engine(self.train_step)
         self.trainer_engine.add_event_handler(Events.EPOCH_COMPLETED, self.step_scheduler)
         self.trainer_engine.add_event_handler(Events.EPOCH_COMPLETED, self.update_teacher_weights)
         self.trainer_engine.add_event_handler(Events.ITERATION_COMPLETED, self.log_step)
 
         Average(output_transform=lambda x: x["loss"]).attach(self.trainer_engine, "avg_train_loss")
+        print(f"ddp trainer | handlers created")
 
         if idist.get_rank() == 0:
+            print(f"ddp trainer | create logs enviroment on main rank")
             self.loss_keys = ["loss", "nnclr_loss", "centroid_loss", "red_loss"]
 
             self.log_path = Path(run_path)
