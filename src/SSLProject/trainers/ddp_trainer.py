@@ -74,7 +74,7 @@ class DDPTrainer:
                 score_name="loss",
                 global_step_transform=global_step_from_engine(self.trainer_engine), # helps fetch the trainer's state
                 )
-            self.trainer_engine.add_event_handler(Events.EPOCH_COMPLETED, model_checkpoint, {"model": self.method.module})
+            self.trainer_engine.add_event_handler(Events.EPOCH_COMPLETED, model_checkpoint, {"model": self.method.modules})
 
 
     def train_step(self, engine, batch):
