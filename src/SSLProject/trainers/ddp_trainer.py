@@ -14,7 +14,6 @@ from SSLProject.methods.base import BaseMomentum
 class DDPTrainer:
     def __init__(self, 
                  method: BaseMomentum,
-                 num_epoch: int,
                  optimizer,
                  scheduler,
                  update_teacher_after_n_epoch: int=0,
@@ -23,7 +22,6 @@ class DDPTrainer:
                  ):
         self.device = idist.device()
 
-        self.num_epoch = num_epoch
         self.update_teacher_after_n_epoch = update_teacher_after_n_epoch
         self.update_teacher_each_n_epoch = update_teacher_each_n_epoch
 
