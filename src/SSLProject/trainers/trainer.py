@@ -1,7 +1,7 @@
 import csv
 from pathlib import Path
-import pandas as pd 
 
+import pandas as pd 
 import torch
 from ignite.engine import Engine, Events
 from ignite.metrics import Average
@@ -17,6 +17,8 @@ class Trainer:
                  scheduler,
                  update_teacher_after_n_epoch: int=0,
                  update_teacher_each_n_epoch: int=1,
+                 accumulate_grad: bool=True,
+                 accumulate_step: int=1,
                  run_path: str="run"
                  ):
         self.device = "cuda"
@@ -24,6 +26,9 @@ class Trainer:
         print(f"trainer | device {self.device}")
         self.update_teacher_after_n_epoch = update_teacher_after_n_epoch
         self.update_teacher_each_n_epoch = update_teacher_each_n_epoch
+
+        self.accumulate_grad = accumulate_grad
+        self.accumulate_step = accumulate_step
 
         self.method = method
         self.method.to(self.device)
@@ -74,8 +79,10 @@ class Trainer:
 
 
     def train_step(self, engine, batch):
+        step = engine.state.epoch_iteration
+        do_step = (step % self.accumulate_step == 0)
+
         self.method.train()
-        self.optimizer.zero_grad()
 
         batch[0] = batch[0].to(self.device).to(torch.float32)
         batch[1] = batch[1].to(self.device).to(torch.float32)
@@ -84,7 +91,10 @@ class Trainer:
             loss_dict = self.method(batch)
         loss = loss_dict["loss"]
         loss.backward()
-        self.optimizer.step()
+
+        if do_step or not self.accumulate_grad:
+            self.optimizer.step()
+            self.optimizer.zero_grad(set_to_none=True)
 
         for k in loss_dict.keys():
             loss_dict[k] = loss_dict[k].item()
