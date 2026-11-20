@@ -28,7 +28,7 @@ class Trainer:
         self.update_teacher_each_n_epoch = update_teacher_each_n_epoch
 
         self.accumulate_grad = accumulate_grad
-        self.accumulate_step = accumulate_step
+        self.accumulate_step = accumulate_step if accumulate_grad else 1
 
         self.method = method
         self.method.to(self.device)
@@ -89,7 +89,7 @@ class Trainer:
 
         with torch.autocast(device_type=str(self.device), dtype=torch.bfloat16):
             loss_dict = self.method(batch)
-        loss = loss_dict["loss"]
+        loss = loss_dict["loss"] / self.accumulate_step
         loss.backward()
 
         if do_step or not self.accumulate_grad:
