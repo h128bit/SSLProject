@@ -41,7 +41,7 @@ class Trainer:
         print(f"trainer | start create handlers")
         self.trainer_engine = Engine(self.train_step)
         self.trainer_engine.add_event_handler(Events.EPOCH_COMPLETED, self.step_scheduler)
-        self.trainer_engine.add_event_handler(Events.EPOCH_COMPLETED, self.update_teacher_weights)
+        # self.trainer_engine.add_event_handler(Events.EPOCH_COMPLETED, self.update_teacher_weights)
         self.trainer_engine.add_event_handler(Events.ITERATION_COMPLETED, self.log_step)
 
         Average(output_transform=lambda x: x["loss"]).attach(self.trainer_engine, "avg_train_loss")
@@ -95,6 +95,8 @@ class Trainer:
         if do_step or not self.accumulate_grad:
             self.optimizer.step()
             self.optimizer.zero_grad(set_to_none=True)
+
+            self.update_teacher_weights(engine)
 
         for k in loss_dict.keys():
             loss_dict[k] = loss_dict[k].item()
