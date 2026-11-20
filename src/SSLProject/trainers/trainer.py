@@ -79,7 +79,7 @@ class Trainer:
 
 
     def train_step(self, engine, batch):
-        step = engine.state.epoch_iteration
+        step = engine.state.iteration
         do_step = (step % self.accumulate_step == 0)
 
         self.method.train()
